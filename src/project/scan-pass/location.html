@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Location System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        
+        .tab-container {
+            display: flex;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-bottom-color: #fff;
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .qr-display {
+            text-align: center;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .qr-code {
+            margin: 20px 0;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .distance {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 15px 0;
+            color: #333;
+        }
+        
+        .secret-content {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .secret-content h2 {
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        
+        .loading {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .access-granted {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .url-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tab-container">
+            <button class="tab active" onclick="showTab('generator')">QR Generator</button>
+            <button class="tab" onclick="showTab('scanner')">Location Check</button>
+        </div>
+        
+        <!-- QR Generator Tab -->
+        <div id="generator" class="tab-content active">
+            <h2>Generate Location-Based QR Code</h2>
+            <p>Create a QR code that will check if users are within 2 meters of your specified location.</p>
+            
+            <div class="form-group">
+                <label for="latitude">Latitude:</label>
+                <input type="number" id="latitude" step="any" placeholder="e.g., 13.7563" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="longitude">Longitude:</label>
+                <input type="number" id="longitude" step="any" placeholder="e.g., 100.5018" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="secretMessage">Secret Message (optional):</label>
+                <textarea id="secretMessage" rows="3" placeholder="This message will be shown when users are within 2 meters"></textarea>
+            </div>
+            
+            <button onclick="generateQR()">Generate QR Code</button>
+            <button onclick="getCurrentLocation()">Use My Current Location</button>
+            
+            <div id="qrDisplay" class="qr-display" style="display: none;">
+                <h3>Your QR Code</h3>
+                <div id="qrCode" class="qr-code"></div>
+                <div class="url-display" id="urlDisplay"></div>
+                <button class="copy-btn" onclick="copyURL()">Copy URL</button>
+                <p>Scan this QR code with a mobile device to test the location check!</p>
+            </div>
+        </div>
+        
+        <!-- Location Check Tab -->
+        <div id="scanner" class="tab-content">
+            <h2>Location Access Check</h2>
+            <p>This page checks if you're within 2 meters of the target location.</p>
+            
+            <div id="statusMessage" class="status info">Click the button below to check your location</div>
+            
+            <div class="distance" id="distanceInfo"></div>
+            
+            <div class="loading" id="loading"></div>
+            
+            <button id="requestLocation" onclick="checkLocation()">Check My Location</button>
+            
+            <div class="secret-content" id="secretContent">
+                <h2>🎉 Access Granted!</h2>
+                <p id="secretText">You've successfully reached within 2 meters of the target location.</p>
+                <p>Congratulations! You're at the right place at the right time.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script>
+        let targetLat = null;
+        let targetLng = null;
+        let secretMessage = '';
+        
+        // Parse URL parameters on load
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('lat') && urlParams.has('lng')) {
+                targetLat = parseFloat(urlParams.get('lat'));
+                targetLng = parseFloat(urlParams.get('lng'));
+                secretMessage = urlParams.get('msg') || 'Welcome to the secret area!';
+                
+                // Switch to scanner tab automatically
+                showTab('scanner');
+                
+                // Update secret message if provided
+                if (secretMessage) {
+                    document.getElementById('secretText').textContent = secretMessage;
+                }
+            }
+        });
+        
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+                },
+                function(error) {
+                    alert('Error getting location: ' + error.message);
+                }
+            );
+        }
+        
+        function generateQR() {
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+            const message = document.getElementById('secretMessage').value;
+            
+            if (!lat || !lng) {
+                alert('Please enter both latitude and longitude.');
+                return;
+            }
+            
+            // Create URL with parameters
+            const baseUrl = window.location.origin + window.location.pathname;
+            let url = `${baseUrl}?lat=${lat}&lng=${lng}`;
+            if (message) {
+                url += `&msg=${encodeURIComponent(message)}`;
+            }
+            
+            // Generate QR code using qrcode-generator library
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(url);
+                qr.make();
+                
+                // Create QR code as HTML
+                const qrContainer = document.getElementById('qrCode');
+                qrContainer.innerHTML = qr.createImgTag(4, 8);
+                
+                // Show QR display
+                document.getElementById('qrDisplay').style.display = 'block';
+                document.getElementById('urlDisplay').textContent = url;
+                
+                console.log('QR Code generated successfully for URL:', url);
+                
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                // Fallback: use Google Charts API
+                generateQRFallback(url);
+            }
+        }
+        
+        function generateQRFallback(url) {
+            console.log('Using fallback QR generation method');
+            const qrContainer = document.getElementById('qrCode');
+            const encodedUrl = encodeURIComponent(url);
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}`;
+            
+            qrContainer.innerHTML = `<img src="${qrApiUrl}" alt="QR Code" style="max-width: 100%; height: auto; border-radius: 10px;">`;
+            
+            // Show QR display
+            document.getElementById('qrDisplay').style.display = 'block';
+            document.getElementById('urlDisplay').textContent = url;
+            
+            console.log('Fallback QR Code generated for URL:', url);
+        }
+        
+        function copyURL() {
+            const urlText = document.getElementById('urlDisplay').textContent;
+            navigator.clipboard.writeText(urlText).then(function() {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        function checkLocation() {
+            if (targetLat === null || targetLng === null) {
+                document.getElementById('statusMessage').textContent = 'No target location set. Please use the QR code generator first.';
+                document.getElementById('statusMessage').className = 'status error';
+                document.getElementById('statusMessage').style.display = 'block';
+                return;
+            }
+            
+            if (!navigator.geolocation) {
+                document.getElementById('statusMessage').textContent = 'Geolocation is not supported by your browser.';
+                document.getElementById('statusMessage').className = 'status error';
+                document.getElementById('statusMessage').style.display = 'block';
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('requestLocation').disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('requestLocation').disabled = false;
+                    
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    // Calculate distance
+                    const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+                    
+                    // Display distance
+                    document.getElementById('distanceInfo').textContent = 
+                        `You are ${distance.toFixed(2)} meters away from the target location.`;
+                    
+                    // Check if within 2 meters
+                    if (distance <= 2) {
+                        document.getElementById('statusMessage').textContent = 'Success! You are within 2 meters of the target.';
+                        document.getElementById('statusMessage').className = 'status success';
+                        document.getElementById('statusMessage').style.display = 'block';
+                        document.getElementById('secretContent').style.display = 'block';
+                        document.getElementById('requestLocation').classList.add('access-granted');
+                        document.getElementById('requestLocation').textContent = 'Access Granted! ✅';
+                    } else {
+                        document.getElementById('statusMessage').textContent = 
+                            `Access denied. You need to be within 2 meters (currently ${distance.toFixed(2)}m away).`;
+                        document.getElementById('statusMessage').className = 'status error';
+                        document.getElementById('statusMessage').style.display = 'block';
+                        document.getElementById('secretContent').style.display = 'none';
+                        document.getElementById('requestLocation').classList.remove('access-granted');
+                        document.getElementById('requestLocation').textContent = 'Check Again';
+                    }
+                },
+                function(error) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('requestLocation').disabled = false;
+                    
+                    let errorMessage = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Location access denied. Please allow location access and try again.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location information is unavailable.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Location request timed out.';
+                            break;
+                        default:
+                            errorMessage = 'An unknown error occurred.';
+                            break;
+                    }
+                    
+                    document.getElementById('statusMessage').textContent = errorMessage;
+                    document.getElementById('statusMessage').className = 'status error';
+                    document.getElementById('statusMessage').style.display = 'block';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth's radius in meters
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+                
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const distance = R * c;
+            
+            return distance;
+        }
+        
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+    </script>
+</body>
+</html>
